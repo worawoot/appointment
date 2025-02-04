@@ -1,0 +1,373 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ข้อมูลการนัดหมายทำบัตรผ่านยานพาหนะ กองบิน 21</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2.1/liff.js"></script> <!-- รวม LIFF SDK -->
+  <style>
+    .loader {
+      border-top-color: #1e293b;
+      animation: spin 1s linear infinite;
+      border: 8px solid #fdefff;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen">
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex-col max-w-md m-auto p-4 ">
+    <!-- Filter Section: ส่วนสำหรับเลือกกรองข้อมูล -->
+    <div class="flex w-full m-auto p-4">
+      <div class="mr-1">
+        <label for="statusFilter" class="block text-xs font-medium text-gray-700">ค้นหาตามสถานะ</label>
+        <select id="statusFilter" class="mt-1  block w-full p-2 border border-gray-300 rounded-2xl">
+          <option value="">ทั้งหมด</option>
+          <option value="รอการยืนยัน">รอการยืนยัน</option>
+          <option value="ยืนยันแล้ว">ยืนยันแล้ว</option>
+          <option value="ยกเลิก">ยกเลิก</option>
+          <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+        </select>
+      </div>
+      <!-- ซ่อนฟิลด์ User ID สำหรับใช้กรอง -->
+      <input type="hidden" id="useridlineFilter">
+      <div>
+        <label for="dateSort" class="block text-xs font-medium text-gray-700">เรียงตามวันที่</label>
+        <select id="dateSort" class="mt-1 block w-full p-2 border border-gray-300 rounded-2xl">
+          <option value="latest">วันที่ล่าสุด</option>
+          <option value="oldest">วันที่เก่าสุด</option>
+        </select>
+      </div>
+      <div>
+        <div class="p-2">
+          <button id="applyFiltersButton"
+            class="mt-3 px-4 py-2 bg-slate-800 text-white rounded-2xl hover:bg-slate-800">กรองข้อมูล</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card Display Section: ส่วนแสดงการ์ดข้อมูล -->
+    <div id="filteredData" class="grid grid-cols-1 ">
+      <!-- จะเพิ่มการ์ดข้อมูลที่นี่ -->
+    </div>
+
+    <!-- Pagination Controls: ปุ่มสำหรับการควบคุมการเปลี่ยนหน้า -->
+    <div id="paginationControls" class="mt-6 flex justify-center space-x-2">
+      <!-- ปุ่มสำหรับควบคุมการเปลี่ยนหน้าจะถูกเพิ่มที่นี่ -->
+    </div>
+  </main>
+
+  <!-- Loading Spinner: ส่วนแสดงตัวโหลดระหว่างรอข้อมูล -->
+  <div id="loadingSpinner" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="loader"></div>
+  </div>
+
+  <script>
+
+    const LIFF_ID = 'XXXXXXXXXXXXXXXXXXX'; // ID สำหรับ LIFF
+    const DETAILS_SCRIPT_URL = 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXXXXXXXX/exec';
+
+
+    const CARDS_PER_PAGE = 5;  // จำนวนการ์ดที่แสดงต่อหน้า
+    let currentPage = 1;  // หน้าปัจจุบัน
+    let totalPages = 1;   // จำนวนหน้าทั้งหมด
+
+    // ฟังก์ชันเริ่มต้น LIFF
+    async function initializeLiff() {
+      try {
+        await liff.init({ liffId: `${LIFF_ID}` });  // เริ่ม LIFF ด้วย ID
+        if (liff.isLoggedIn()) {
+          getUserProfile();  // ถ้าล็อกอินแล้ว เรียกฟังก์ชัน getUserProfile
+        } else {
+          liff.login();  // ถ้ายังไม่ล็อกอิน ให้ทำการล็อกอิน
+        }
+      } catch (error) {
+        console.error('LIFF Initialization failed', error);  // แสดงข้อผิดพลาดถ้ามีปัญหาในการเริ่มต้น LIFF
+      }
+    }
+
+    // ฟังก์ชันสำหรับดึงข้อมูลผู้ใช้จาก LIFF
+    async function getUserProfile() {
+      try {
+        const profile = await liff.getProfile();  // ดึงข้อมูลโปรไฟล์ของผู้ใช้
+        document.getElementById('useridlineFilter').value = profile.userId;  // ใส่ userId ลงในฟิลด์ซ่อน
+        applyFilter();  // เรียกฟังก์ชัน applyFilter เพื่อกรองข้อมูลตาม userId
+      } catch (error) {
+        console.error('Error getting profile data:', error);  // แสดงข้อผิดพลาดถ้าไม่สามารถดึงโปรไฟล์ได้
+      }
+    }
+
+    // ฟังก์ชันสำหรับการกรองข้อมูล
+    function applyFilter() {
+      currentPage = 1;  // ตั้งค่าหน้าเป็นหน้าที่ 1 ใหม่ทุกครั้งที่กรอง
+      fetchAndPopulateCards();  // เรียกฟังก์ชันเพื่อดึงข้อมูลและแสดงผล
+    }
+
+    // ฟังก์ชันสำหรับดึงข้อมูลและแสดงผลการ์ด
+    function fetchAndPopulateCards() {
+      fetch(`${DETAILS_SCRIPT_URL}?action=fetchBookings`)  // ดึงข้อมูลการนัดหมายจาก URL
+        .then(response => response.json())  // แปลงข้อมูลเป็น JSON
+        .then(details => {
+          const filteredData = document.getElementById('filteredData');
+          filteredData.innerHTML = '';  // ล้างข้อมูลการ์ดก่อนการแสดงผลใหม่
+
+          // แปลงวันที่ในรูปแบบ String ให้เป็น Date เพื่อใช้ในการจัดเรียง
+          details.forEach(detail => {
+            const [day, month, year] = detail.date.split('-');
+            detail.parsedDate = new Date(`${year}-${month}-${day}`);
+          });
+
+          // เรียงข้อมูลตามวันที่
+          const dateSort = document.getElementById('dateSort').value;
+          details.sort((a, b) => {
+            return dateSort === 'latest' ? b.parsedDate - a.parsedDate : a.parsedDate - b.parsedDate;
+          });
+
+          // กรองข้อมูลตามสถานะและ userId
+          const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+          const useridlineFilter = document.getElementById('useridlineFilter').value.toLowerCase();
+
+          let filteredDetails = details.filter(detail => {
+            const matchesStatus = statusFilter === '' || detail.status.toLowerCase().includes(statusFilter);
+            const matchesUseridline = useridlineFilter === '' || detail.userlineid.toLowerCase().includes(useridlineFilter);
+            return matchesStatus && matchesUseridline;  // กรองข้อมูลที่ตรงกับเงื่อนไขทั้งสอง
+          });
+
+          totalPages = Math.ceil(filteredDetails.length / CARDS_PER_PAGE);  // คำนวณจำนวนหน้าทั้งหมด
+          displayCards(filteredDetails, currentPage);  // แสดงการ์ดข้อมูล
+          createPaginationControls();  // สร้างปุ่มควบคุมการเปลี่ยนหน้า
+        })
+        .catch(error => {
+          console.error('Error fetching user details:', error);  // แสดงข้อผิดพลาดหากมีปัญหาในการดึงข้อมูล
+        });
+    }
+
+    // ฟังก์ชันสำหรับแสดงผลการ์ดข้อมูล
+    function displayCards(details, page) {
+      const filteredData = document.getElementById('filteredData');
+      filteredData.innerHTML = '';  // ล้างข้อมูลเก่าออก
+
+      const startIndex = (page - 1) * CARDS_PER_PAGE;  // คำนวณจุดเริ่มต้น
+      const endIndex = startIndex + CARDS_PER_PAGE;    // คำนวณจุดสิ้นสุด
+      const detailsToDisplay = details.slice(startIndex, endIndex);  // เลือกเฉพาะข้อมูลที่จะแสดงในหน้านั้น
+
+      // วนลูปเพื่อสร้างการ์ดสำหรับแต่ละรายการ
+      detailsToDisplay.forEach(detail => {
+        detail.id = detail.idKey;
+
+        let disableConfirm = false;
+        let disableCancel = false;
+
+        // ตั้งค่าเปิด-ปิดปุ่มตามสถานะของแต่ละการนัดหมาย
+        switch (detail.status) {
+          case 'รอการยืนยัน':
+            break;
+          case 'ยืนยันแล้ว':
+            disableConfirm = true;
+            break;
+          case 'ยกเลิก':
+          case 'เสร็จสิ้น':
+            disableCancel = true;
+            disableConfirm = true;
+            break;
+        }
+
+        // สร้างโครงสร้างการ์ด
+        const card = document.createElement('div');
+        card.classList.add('bg-white', 'p-4', 'mb-2', 'rounded-2xl', 'shadow-md');
+
+        card.innerHTML = `
+          <div class="flex justify-between p-2">
+            <p class="text-sm text-gray-700"><strong>ประเภท:</strong> ${detail.service}</p>
+            <p class="text-sm text-gray-700"><strong>วันที่:</strong> ${detail.date}</p>
+          </div>
+          <div class="flex justify-between p-2">
+            <p class="text-sm text-gray-700"><strong>ชนิด:</strong> ${detail.locationservice}</p>
+            <p class="text-sm text-gray-700"><strong>เวลา:</strong> ${detail.time}</p>
+          </div>
+          <div class="p-2 text-sm text-gray-700">
+            <p><strong>ชื่อ:</strong> ${detail.name}</p>
+            <p><strong>เบอร์โทร:</strong> ${detail.phonenumber}</p>
+            <p><strong>หมายเหตุ:</strong> ${detail.note}</p>
+          </div>
+          <p class="p-2 text-sm text-gray-700"><strong>สถานะ:</strong> ${detail.status}</p>
+          <div class="mt-4 flex flex-row justify-between">
+            <button class="confirm-btn bg-green-500 text-white px-4 py-1 rounded-2xl ${disableConfirm ? 'opacity-50 cursor-not-allowed' : ''}" ${disableConfirm ? 'disabled' : ''} data-id="${detail.idKey}">ยืนยันนัดหมาย</button>
+            <button class="cancel-btn bg-red-500 text-white px-4 py-1 rounded-2xl ${disableCancel ? 'opacity-50 cursor-not-allowed' : ''}" ${disableCancel ? 'disabled' : ''} data-id="${detail.idKey}">ยกเลิก</button>
+          </div>
+        `;
+
+        filteredData.appendChild(card);  // เพิ่มการ์ดลงใน DOM
+      });
+
+      attachEventListeners();  // เพิ่ม Event Listeners สำหรับปุ่ม
+    }
+
+    // ฟังก์ชันสร้างปุ่มควบคุมการเปลี่ยนหน้า
+    function createPaginationControls() {
+      const paginationControls = document.getElementById('paginationControls');
+      paginationControls.innerHTML = '';  // ล้างปุ่มควบคุมก่อนสร้างใหม่
+
+      const maxVisibleButtons = 3;  // จำนวนปุ่มที่แสดงต่อครั้ง
+      const startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));  // หน้าเริ่มต้น
+      const endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);  // หน้าสุดท้ายที่จะแสดง
+
+      // สร้างปุ่ม "ย้อนกลับ"
+      const prevButton = document.createElement('button');
+      prevButton.textContent = 'ย้อนกลับ';
+      prevButton.disabled = currentPage === 1;
+      prevButton.classList.add('px-4', 'py-2', 'bg-slate-800', 'text-white', 'rounded-2xl', 'hover:bg-slate-600', 'disabled:opacity-50');
+      prevButton.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          fetchAndPopulateCards();
+        }
+      });
+      paginationControls.appendChild(prevButton);
+
+      // สร้างปุ่มสำหรับหน้าต่างๆ
+      for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.classList.add('px-4', 'py-2', 'bg-slate-800', 'text-white', 'rounded-2xl', 'hover:bg-slate-600');
+        if (i === currentPage) {
+          pageButton.classList.add('bg-slate-600');
+        }
+        pageButton.addEventListener('click', () => {
+          currentPage = i;
+          fetchAndPopulateCards();
+        });
+        paginationControls.appendChild(pageButton);
+      }
+
+      // สร้างปุ่ม "ถัดไป"
+      const nextButton = document.createElement('button');
+      nextButton.textContent = 'ถัดไป';
+      nextButton.disabled = currentPage === totalPages;
+      nextButton.classList.add('px-4', 'py-2', 'bg-slate-800', 'text-white', 'rounded-2xl', 'hover:bg-slate-600', 'disabled:opacity-50');
+      nextButton.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          fetchAndPopulateCards();
+        }
+      });
+      paginationControls.appendChild(nextButton);
+    }
+
+    // ฟังก์ชันเพิ่ม Event Listeners สำหรับปุ่มยืนยันและยกเลิก
+    function attachEventListeners() {
+      document.querySelectorAll('.confirm-btn').forEach(button => {
+        button.addEventListener('click', function () {
+          const id = this.dataset.id;
+          confirmBooking(id);  // เรียกฟังก์ชันยืนยันการนัดหมาย
+        });
+      });
+
+      document.querySelectorAll('.cancel-btn').forEach(button => {
+        button.addEventListener('click', function () {
+          const id = this.dataset.id;
+          cancelBooking(id);  // เรียกฟังก์ชันยกเลิกการนัดหมาย
+        });
+      });
+    }
+
+    // ฟังก์ชันยืนยันการนัดหมาย
+    function confirmBooking(id) {
+      Swal.fire({
+        title: 'คุณแน่ใจหรือไม่?',
+        text: "คุณต้องการยืนยันการนัดหมายนี้หรือไม่!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, ยืนยันเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoadingSpinner(true);  // แสดงตัวโหลด
+          fetch(`${DETAILS_SCRIPT_URL}?action=confirmBooking&id=${encodeURIComponent(id)}`, { method: 'POST' })
+            .then(response => response.text())
+            .then(data => {
+              showLoadingSpinner(false);  // ซ่อนตัวโหลด
+              Swal.fire('ยืนยันแล้ว!', 'การจองได้รับการยืนยันแล้ว.', 'success');
+              fetchAndPopulateCards();  // โหลดข้อมูลใหม่
+            })
+            .catch(error => {
+              showLoadingSpinner(false);  // ซ่อนตัวโหลด
+              Swal.fire('ข้อผิดพลาด!', 'เกิดข้อผิดพลาดในการยืนยันการนัดหมาย.', 'error');
+              console.error('Error confirming booking:', error);
+            });
+        }
+      });
+    }
+
+    // ฟังก์ชันยกเลิกการนัดหมาย
+    function cancelBooking(id) {
+      Swal.fire({
+        title: 'คุณแน่ใจหรือไม่?',
+        text: "คุณต้องการยกเลิกการนัดหมายนี้หรือไม่!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, ยกเลิกเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoadingSpinner(true);  // แสดงตัวโหลด
+          fetch(`${DETAILS_SCRIPT_URL}?action=cancelBooking&id=${encodeURIComponent(id)}`, { method: 'POST' })
+            .then(response => response.text())
+            .then(data => {
+              showLoadingSpinner(false);  // ซ่อนตัวโหลด
+              Swal.fire('ยกเลิกแล้ว!', 'การนัดหมายถูกยกเลิกแล้ว.', 'success');
+              fetchAndPopulateCards();  // โหลดข้อมูลใหม่
+            })
+            .catch(error => {
+              showLoadingSpinner(false);  // ซ่อนตัวโหลด
+              Swal.fire('ข้อผิดพลาด!', 'เกิดข้อผิดพลาดในการยกเลิกการนัดหมาย.', 'error');
+              console.error('Error canceling booking:', error);
+            });
+        }
+      });
+    }
+
+    // ฟังก์ชันแสดง/ซ่อนตัวโหลด
+    function showLoadingSpinner(show) {
+      const spinner = document.getElementById('loadingSpinner');
+      if (show) {
+        spinner.classList.remove('hidden');  // แสดงตัวโหลด
+      } else {
+        spinner.classList.add('hidden');  // ซ่อนตัวโหลด
+      }
+    }
+
+    // Event Listener สำหรับปุ่ม "กรองข้อมูล"
+    document.getElementById('applyFiltersButton').addEventListener('click', function () {
+      currentPage = 1;  // ตั้งค่าให้กลับไปหน้าแรก
+      fetchAndPopulateCards();  // ดึงข้อมูลและแสดงผลใหม่
+    });
+
+    // Event Listener ที่จะทำงานเมื่อหน้าเว็บโหลดเสร็จ
+    document.addEventListener('DOMContentLoaded', function () {
+      initializeLiff();  // เริ่มต้น LIFF
+      fetchAndPopulateCards();  // ดึงข้อมูลและแสดงการ์ด
+    });
+  </script>
+
+</body>
+
+</html>
