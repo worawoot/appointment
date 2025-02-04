@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ระบบบันทึกการนัดหมาย</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- รวม Tailwind CSS -->
+  <style>
+    @import 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
+  </style>
+
+  <!-- รวม SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .bg-main {
+      background-color: #181059;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 container mx-auto">
+
+  <div class="flex p-8 text-sm">
+    <!-- Sidebar -->
+    <div class="w-1/4 p-6 bg-white border border-indigo-900">
+      <h1 class="text-xl font-bold mb-4">จองนัดหมาย</h1>
+
+      <div class="booking-form">
+        <form id="bookingForm">
+          <div class="mb-4">
+            <label for="userid" class="block text-gray-700">User ID:</label>
+            <input type="text" id="userid" name="userid" required class="mt-1 p-2 w-full border bg-main text-gray-200 rounded" readonly>
+          </div>
+
+          <div class="mb-4">
+            <label for="name" class="block text-gray-700">ชื่อผู้จอง:</label>
+            <input list="namesList" id="name" name="name" required class="mt-1 p-2 w-full border rounded">
+            <datalist id="namesList">
+              <!-- ตัวเลือกชื่อจะถูกเติมโดย JavaScript -->
+            </datalist>
+          </div>
+
+          <div class="mb-4">
+            <label for="phonenumber" class="block text-gray-700">เบอร์โทรศัพท์:</label>
+            <input list="phonesList" id="phonenumber" name="phonenumber" required class="mt-1 p-2 w-full border rounded">
+            <datalist id="phonesList">
+              <!-- ตัวเลือกเบอร์โทรศัพท์จะถูกเติมโดย JavaScript -->
+            </datalist>
+          </div>
+
+          <div class="mb-4">
+            <label for="service" class="block text-gray-700">เลือกประเภทบุคคล:</label>
+            <select id="service" name="service" required class="mt-1 p-2 w-full border rounded">
+              <option value="" disabled selected>เลือก</option>
+              <!-- ตัวเลือกจะถูกเติมโดยอัตโนมัติ -->
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label for="locationservice" class="block text-gray-700">เลือกชนิดรถ:</label>
+            <select id="locationservice" name="locationservice" required class="mt-1 p-2 w-full border rounded">
+              <option value="" disabled selected>เลือก</option>
+              <!-- ตัวเลือกจะถูกเติมโดยอัตโนมัติ -->
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label for="date" class="block text-gray-700">วันที่:</label>
+            <input type="date" id="date" name="date" required class="mt-1 p-2 w-full border rounded">
+          </div>
+
+          <!-- เพิ่มส่วนแสดงเวลาที่ว่าง -->
+          <div class="mb-4">
+            <label class="block text-gray-700">เวลา:</label>
+            <div id="timeSlots" class="mt-2">
+              <!-- จะเติมข้อมูลเวลาที่ว่างที่นี่ -->
+            </div>
+          </div>
+
+          <!-- เพิ่ม input ซ่อนสำหรับเก็บเวลาที่เลือก -->
+          <input type="hidden" id="selectedTime" name="time" required>
+
+          <div class="mb-4">
+            <label for="note" class="block text-gray-700">หมายเหตุ:</label>
+            <textarea id="note" name="note" class="mt-1 p-2 w-full border rounded"></textarea>
+          </div>
+
+          <div class="mb-4">
+            <label class="inline-flex items-center">
+              <input type="checkbox" id="saveInfo" name="saveInfo" class="form-checkbox">
+              <span class="ml-2">บันทึกข้อมูลของฉัน</span>
+            </label>
+          </div>
+
+          <!-- เพิ่ม id ให้กับปุ่มจองนัดหมายเพื่อเข้าถึงจาก JavaScript -->
+          <button type="submit" id="bookingButton" class="bg-main text-white px-4 py-2 rounded w-full">จองนัดหมาย</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="w-3/4 p-4">
+      <h2 class="text-xl font-bold mb-4">การนัดหมายที่มีอยู่</h2>
+      
+      <!-- ส่วนฟิลเตอร์ -->
+      <div class="mb-4 bg-white p-4 rounded shadow-md">
+        <h3 class="text-lg font-semibold mb-2">กรองข้อมูล</h3>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label for="filterName" class="block text-gray-700">ชื่อ</label>
+            <input type="text" id="filterName" class="mt-1 p-2 w-full border rounded" placeholder="กรอกชื่อ">
+          </div>
+          <div>
+            <label for="filterPhone" class="block text-gray-700">เบอร์ติดต่อ</label>
+            <input type="text" id="filterPhone" class="mt-1 p-2 w-full border rounded" placeholder="กรอกเบอร์ติดต่อ">
+          </div>
+          <div>
+            <label for="filterLocation" class="block text-gray-700">ชนิดรถ</label>
+            <input type="text" id="filterLocation" class="mt-1 p-2 w-full border rounded" placeholder="กรอกชนิดรถ">
+          </div>
+          <div>
+            <label for="filterDate" class="block text-gray-700">วันที่</label>
+            <input type="date" id="filterDate" class="mt-1 p-2 w-full border rounded">
+          </div>
+          <div>
+            <label for="filterStatus" class="block text-gray-700">สถานะ</label>
+            <select id="filterStatus" class="mt-1 p-2 w-full border rounded">
+              <option value="">ทุกสถานะ</option>
+              <option value="รอการยืนยัน">รอการยืนยัน</option>
+              <option value="ยืนยันแล้ว">ยืนยันแล้ว</option>
+              <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+              <option value="ยกเลิก">ยกเลิก</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4">
+          <button id="clearFilters" class="bg-red-500 text-white px-4 py-2 rounded">ล้างฟิลเตอร์</button>
+        </div>
+      </div>
+
+      <div id="bookingsList" class="bg-white p-6 rounded shadow-md">
+        <!-- จะแสดงรายการนัดหมายที่นี่ -->
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider rounded-tl-lg">ชื่อ</th>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider">เบอร์ติดต่อ</th>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider">ประเภท</th>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider">ชนิด</th>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider">วันที่</th>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider">เวลา</th>
+              <th class="px-6 py-3 bg-main text-left text-sm font-medium text-white uppercase tracking-wider">สถานะ</th>
+              <th class="px-6 py-3 bg-main text-center text-sm font-medium text-white uppercase tracking-wider rounded-tr-lg">การกระทำ</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsTable" class="bg-white divide-y divide-gray-200">
+            <!-- จะเติมข้อมูลแถวของตารางที่นี่ -->
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div id="pagination" class="mt-4 flex justify-center">
+          <!-- ปุ่มแบ่งหน้าจะถูกเพิ่มที่นี่ -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let bookingsData = []; // เก็บข้อมูลการนัดหมายทั้งหมด
+    let membersData = [];  // เก็บข้อมูลสมาชิก
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let filteredData = []; // เก็บข้อมูลที่กรองแล้ว
+
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchServicesAndLocations();
+      fetchBookings();
+      fetchMembers();
+
+      const dateInput = document.getElementById('date');
+      dateInput.addEventListener('change', checkAvailability);
+
+      const bookingForm = document.getElementById('bookingForm');
+      bookingForm.addEventListener('submit', makeBooking);
+
+      handleMemberSelection(); // เรียกใช้ฟังก์ชันนี้ที่นี่
+
+      // เพิ่มการจัดการฟิลเตอร์
+      setupFilters();
+    });
+
+    function setupFilters() {
+      const filterName = document.getElementById('filterName');
+      const filterPhone = document.getElementById('filterPhone');
+      const filterLocation = document.getElementById('filterLocation');
+      const filterDate = document.getElementById('filterDate');
+      const filterStatus = document.getElementById('filterStatus');
+      const clearFiltersButton = document.getElementById('clearFilters');
+
+      // ฟังก์ชันสำหรับการกรองข้อมูล
+      function applyFilters() {
+        const name = filterName.value.trim().toLowerCase();
+        const phone = filterPhone.value.trim().toLowerCase();
+        const location = filterLocation.value.trim().toLowerCase();
+        const date = filterDate.value;
+        const status = filterStatus.value;
+
+        filteredData = bookingsData.filter(booking => {
+          // แปลงวันที่และเวลาเป็น Date object
+          let bookingDate = new Date(booking.date + ' ' + booking.time);
+
+          return (
+            (name === "" || booking.name.toLowerCase().includes(name)) &&
+            (phone === "" || booking.phonenumber.toLowerCase().includes(phone)) &&
+            (location === "" || booking.locationservice.toLowerCase().includes(location)) &&
+            (date === "" || booking.date === date) &&
+            (status === "" || booking.status === status)
+          );
+        });
+
+        currentPage = 1;
+        displayBookings();
+        setupPagination();
+      }
+
+      // เพิ่ม event listeners ให้กับฟิลเตอร์ทุกตัว
+      filterName.addEventListener('input', applyFilters);
+      filterPhone.addEventListener('input', applyFilters);
+      filterLocation.addEventListener('input', applyFilters);
+      filterDate.addEventListener('change', applyFilters);
+      filterStatus.addEventListener('change', applyFilters);
+
+      // ฟังก์ชันสำหรับการล้างฟิลเตอร์
+      clearFiltersButton.addEventListener('click', function() {
+        filterName.value = "";
+        filterPhone.value = "";
+        filterLocation.value = "";
+        filterDate.value = "";
+        filterStatus.value = "";
+        filteredData = bookingsData;
+        currentPage = 1;
+        displayBookings();
+        setupPagination();
+      });
+    }
+
+    function fetchServicesAndLocations() {
+      google.script.run
+        .withSuccessHandler(function(data) {
+          const serviceSelect = document.getElementById('service');
+          const locationSelect = document.getElementById('locationservice');
+
+          data.services.forEach(service => {
+            const option = document.createElement('option');
+            option.value = service;
+            option.textContent = service;
+            serviceSelect.appendChild(option);
+          });
+
+          data.locationservice.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location;
+            option.textContent = location;
+            locationSelect.appendChild(option);
+          });
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching services and locations:', error);
+        })
+        .fetchServicesAndlocationservice();
+    }
+
+    function checkAvailability() {
+      const date = document.getElementById('date').value;
+      if (!date) return;
+
+      google.script.run
+        .withSuccessHandler(function(data) {
+          const timeSlotsDiv = document.getElementById('timeSlots');
+          timeSlotsDiv.innerHTML = ''; // ล้างข้อมูลก่อนหน้า
+
+          if (data.length === 0) {
+            timeSlotsDiv.textContent = 'ไม่มีช่วงเวลาว่างในวันนี้';
+            return;
+          }
+
+          const gridContainer = document.createElement('div');
+          gridContainer.className = 'grid grid-cols-3 gap-2';
+
+          data.forEach(slot => {
+            const button = document.createElement('button');
+            button.type = 'button'; // กำหนดประเภทของปุ่มเป็น 'button'
+            button.textContent = `${slot.time} (${slot.remaining}/${slot.total})`;
+            button.className = 'py-2 px-4 rounded';
+
+            if (slot.status === 'ว่าง') {
+              button.classList.add('bg-green-500', 'text-white', 'hover:bg-green-600');
+              button.addEventListener('click', () => {
+                selectTimeSlot(slot.time);
+              });
+            } else if (slot.status === 'เต็ม') {
+              button.classList.add('bg-red-500', 'text-white', 'cursor-not-allowed');
+              button.disabled = true;
+            } else {
+              button.classList.add('bg-gray-400', 'text-white', 'cursor-not-allowed');
+              button.disabled = true;
+            }
+
+            gridContainer.appendChild(button);
+          });
+
+          timeSlotsDiv.appendChild(gridContainer);
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error checking availability:', error);
+        })
+        .checkAvailabilityFromClient(date);
+    }
+
+    function selectTimeSlot(time) {
+      const selectedTimeInput = document.getElementById('selectedTime');
+      selectedTimeInput.value = time;
+
+      // เน้นปุ่มที่ถูกเลือก
+      const buttons = document.querySelectorAll('#timeSlots button');
+      buttons.forEach(button => {
+        if (button.textContent.startsWith(time)) {
+          button.classList.add('ring-4', 'ring-blue-300');
+        } else {
+          button.classList.remove('ring-4', 'ring-blue-300');
+        }
+      });
+    }
+
+    function makeBooking(event) {
+      event.preventDefault();
+
+      const bookingButton = document.getElementById('bookingButton');
+      bookingButton.disabled = true; // ปิดการใช้งานปุ่ม
+      bookingButton.textContent = 'กำลังจอง...'; // เปลี่ยนข้อความปุ่ม
+
+      const formData = new FormData(event.target);
+
+      const bookingData = {
+        userid: formData.get('userid'),
+        name: formData.get('name'),
+        phonenumber: formData.get('phonenumber'),
+        note: formData.get('note'),
+        service: formData.get('service'),
+        locationservice: formData.get('locationservice'),
+        date: formData.get('date'), // ส่งวันที่ในรูปแบบ 'YYYY-MM-DD'
+        time: formData.get('time'), // ส่งเวลาในรูปแบบ 'HH:mm'
+        saveInfo: formData.get('saveInfo') ? 'on' : '',
+      };
+
+      // ตรวจสอบว่ามีการเลือกบริการและสถานที่
+      if (!bookingData.service || !bookingData.locationservice) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ข้อมูลไม่ครบ',
+          text: 'กรุณาเลือกบริการและสถานที่ก่อนทำการจองนัดหมาย'
+        });
+        bookingButton.disabled = false; // เปิดการใช้งานปุ่ม
+        bookingButton.textContent = 'จองนัดหมาย'; // เปลี่ยนข้อความปุ่มกลับ
+        return;
+      }
+
+      // ตรวจสอบว่ามีการเลือกเวลาหรือไม่
+      if (!bookingData.time) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ยังไม่ได้เลือกเวลา',
+          text: 'กรุณาเลือกช่วงเวลาที่ต้องการนัดหมาย'
+        });
+        bookingButton.disabled = false; // เปิดการใช้งานปุ่ม
+        bookingButton.textContent = 'จองนัดหมาย'; // เปลี่ยนข้อความปุ่มกลับ
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          Swal.fire({
+            icon: 'success',
+            title: 'สำเร็จ!',
+            text: response
+          }).then(() => {
+            bookingForm.reset();
+            document.getElementById('userid').value = ''; // ล้างค่า userid
+            fetchBookings(); // รีเฟรชรายการนัดหมาย
+            document.getElementById('timeSlots').innerHTML = ''; // ล้างเวลาที่เลือก
+          });
+          bookingButton.disabled = false; // เปิดการใช้งานปุ่ม
+          bookingButton.textContent = 'จองนัดหมาย'; // เปลี่ยนข้อความปุ่มกลับ
+        })
+        .withFailureHandler(function(error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: error.message || 'ไม่สามารถจองนัดหมายได้'
+          });
+          console.error('Error making booking:', error);
+          bookingButton.disabled = false; // เปิดการใช้งานปุ่ม
+          bookingButton.textContent = 'จองนัดหมาย'; // เปลี่ยนข้อความปุ่มกลับ
+        })
+        .makeBookingFromClient(bookingData);
+    }
+
+    function fetchBookings() {
+      google.script.run
+        .withSuccessHandler(function(bookings) {
+          bookingsData = bookings;
+
+          // เรียงลำดับการนัดหมายจากล่าสุดไปเก่าสุด
+          bookingsData.sort(function(a, b) {
+            const dateA = new Date(a.date + ' ' + a.time);
+            const dateB = new Date(b.date + ' ' + b.time);
+            return dateB - dateA; // ลำดับจากมากไปน้อย (ล่าสุดก่อน)
+          });
+
+          // กรองข้อมูลเพื่อซ่อนสถานะ 'ยกเลิก' และ 'เสร็จสิ้น' ในการโหลดครั้งแรก
+          filteredData = bookingsData.filter(booking => 
+            booking.status !== 'ยกเลิก' && booking.status !== 'เสร็จสิ้น'
+          );
+
+          currentPage = 1;
+          displayBookings();
+          setupPagination();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching bookings:', error);
+        })
+        .fetchBookings();
+    }
+
+    function displayBookings() {
+      const bookingsTable = document.getElementById('bookingsTable');
+      bookingsTable.innerHTML = '';
+
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const pageData = filteredData.slice(startIndex, endIndex);
+
+      pageData.forEach(booking => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">${booking.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.phonenumber}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.service}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.locationservice}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.date}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.time}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.status}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            ${generateActionButtons(booking.status, booking.idKey)}
+          </td>
+        `;
+
+        bookingsTable.appendChild(row);
+      });
+    }
+
+    function setupPagination() {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.textContent = i;
+        button.className = 'mx-1 px-2 py-1 rounded';
+        if (i === currentPage) {
+          button.classList.add('bg-blue-500', 'text-white');
+        } else {
+          button.classList.add('bg-gray-300');
+        }
+        button.addEventListener('click', function() {
+          currentPage = i;
+          displayBookings();
+          setupPagination();
+        });
+        paginationDiv.appendChild(button);
+      }
+    }
+
+    /**
+     * สร้างปุ่มการกระทำตามสถานะของการนัดหมาย
+     * @param {string} status - สถานะของการนัดหมาย
+     * @param {string} idKey - รหัสการนัดหมาย
+     * @returns {string} - HTML ของปุ่มการกระทำ
+     */
+    function generateActionButtons(status, idKey) {
+      let buttonsHTML = '';
+
+      // ปุ่มยืนยัน
+      if (status === 'รอการยืนยัน') {
+        buttonsHTML += `<button class="bg-green-500 text-white px-2 py-1 rounded mr-1" onclick="confirmBooking('${idKey}')">ยืนยัน</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-green-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>ยืนยัน</button>`;
+      }
+
+      // ปุ่มเสร็จสิ้น
+      if (status === 'ยืนยันแล้ว') {
+        buttonsHTML += `<button class="bg-yellow-500 text-white px-2 py-1 rounded mr-1" onclick="completeBooking('${idKey}')">เสร็จสิ้น</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-yellow-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>เสร็จสิ้น</button>`;
+      }
+
+      // ปุ่มยกเลิก
+      if (status === 'รอการยืนยัน' || status === 'ยืนยันแล้ว') {
+        buttonsHTML += `<button class="bg-red-500 text-white px-2 py-1 rounded mr-1" onclick="cancelBooking('${idKey}')">ยกเลิก</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-red-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>ยกเลิก</button>`;
+      }
+
+      // ปุ่มส่งแจ้งเตือน
+      if (status === 'รอการยืนยัน') {
+        buttonsHTML += `<button class="bg-blue-500 text-white px-2 py-1 rounded" onclick="sendReminder('${idKey}')">แจ้งเตือน</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-blue-500 text-white px-2 py-1 rounded opacity-50 cursor-not-allowed" disabled>แจ้งเตือน</button>`;
+      }
+
+      return buttonsHTML;
+    }
+
+    function confirmBooking(idKey) {
+      Swal.fire({
+        title: 'ยืนยันการนัดหมาย?',
+        text: 'คุณต้องการยืนยันการนัดหมายนี้หรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถยืนยันการนัดหมายได้'
+              });
+              console.error('Error confirming booking:', error);
+            })
+            .confirmBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function cancelBooking(idKey) {
+      Swal.fire({
+        title: 'ยกเลิกการนัดหมาย?',
+        text: 'คุณต้องการยกเลิกการนัดหมายนี้หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยกเลิกการนัดหมาย',
+        cancelButtonText: 'กลับ'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถยกเลิกการนัดหมายได้'
+              });
+              console.error('Error cancelling booking:', error);
+            })
+            .cancelBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function completeBooking(idKey) {
+      Swal.fire({
+        title: 'เสร็จสิ้นการนัดหมาย?',
+        text: 'คุณต้องการทำเครื่องหมายการนัดหมายนี้ว่าเสร็จสิ้นหรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'เสร็จสิ้น',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถเสร็จสิ้นการนัดหมายได้'
+              });
+              console.error('Error completing booking:', error);
+            })
+            .completeBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function sendReminder(idKey) {
+      Swal.fire({
+        title: 'ส่งการแจ้งเตือน?',
+        text: 'คุณต้องการส่งการแจ้งเตือนนี้หรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'ส่ง',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'แจ้งเตือนถูกส่งแล้ว!',
+                text: response,
+                timer: 2000,
+                showConfirmButton: false
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถส่งการแจ้งเตือนได้'
+              });
+              console.error('Error sending reminder:', error);
+            })
+            .sendReminderFromClient(idKey);
+        }
+      });
+    }
+
+    function fetchMembers() {
+      google.script.run
+        .withSuccessHandler(function(members) {
+          membersData = members;
+          populateDataLists();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching members:', error);
+        })
+        .fetchMembers();
+    }
+
+    function populateDataLists() {
+      const namesList = document.getElementById('namesList');
+      const phonesList = document.getElementById('phonesList');
+
+      membersData.forEach(member => {
+        const optionName = document.createElement('option');
+        optionName.value = member.name;
+        namesList.appendChild(optionName);
+
+        const optionPhone = document.createElement('option');
+        optionPhone.value = member.phoneNumber;
+        phonesList.appendChild(optionPhone);
+      });
+    }
+
+    function handleMemberSelection() {
+      const nameInput = document.getElementById('name');
+      const phoneInput = document.getElementById('phonenumber');
+      const useridInput = document.getElementById('userid');
+
+      nameInput.addEventListener('input', function() {
+        const selectedName = nameInput.value;
+        const member = membersData.find(m => m.name === selectedName);
+        if (member) {
+          useridInput.value = member.userId;
+          phoneInput.value = member.phoneNumber;
+        }
+      });
+
+      phoneInput.addEventListener('input', function() {
+        const selectedPhone = phoneInput.value;
+        const member = membersData.find(m => m.phoneNumber === selectedPhone);
+        if (member) {
+          useridInput.value = member.userId;
+          nameInput.value = member.name;
+        }
+      });
+    }
+
+    function fetchBookings() {
+      google.script.run
+        .withSuccessHandler(function(bookings) {
+          bookingsData = bookings;
+
+          // เรียงลำดับการนัดหมายจากล่าสุดไปเก่าสุด
+          bookingsData.sort(function(a, b) {
+            const dateA = new Date(a.date + ' ' + a.time);
+            const dateB = new Date(b.date + ' ' + b.time);
+            return dateB - dateA; // ลำดับจากมากไปน้อย (ล่าสุดก่อน)
+          });
+
+          // กรองข้อมูลเพื่อซ่อนสถานะ 'ยกเลิก' และ 'เสร็จสิ้น' ในการโหลดครั้งแรก
+          filteredData = bookingsData.filter(booking => 
+            booking.status !== 'ยกเลิก' && booking.status !== 'เสร็จสิ้น'
+          );
+
+          currentPage = 1;
+          displayBookings();
+          setupPagination();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching bookings:', error);
+        })
+        .fetchBookings();
+    }
+
+    function displayBookings() {
+      const bookingsTable = document.getElementById('bookingsTable');
+      bookingsTable.innerHTML = '';
+
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const pageData = filteredData.slice(startIndex, endIndex);
+
+      pageData.forEach(booking => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">${booking.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.phonenumber}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.service}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.locationservice}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.date}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.time}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.status}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            ${generateActionButtons(booking.status, booking.idKey)}
+          </td>
+        `;
+
+        bookingsTable.appendChild(row);
+      });
+    }
+
+    function setupPagination() {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.textContent = i;
+        button.className = 'mx-1 px-2 py-1 rounded';
+        if (i === currentPage) {
+          button.classList.add('bg-blue-500', 'text-white');
+        } else {
+          button.classList.add('bg-gray-300');
+        }
+        button.addEventListener('click', function() {
+          currentPage = i;
+          displayBookings();
+          setupPagination();
+        });
+        paginationDiv.appendChild(button);
+      }
+    }
+
+    /**
+     * สร้างปุ่มการกระทำตามสถานะของการนัดหมาย
+     * @param {string} status - สถานะของการนัดหมาย
+     * @param {string} idKey - รหัสการนัดหมาย
+     * @returns {string} - HTML ของปุ่มการกระทำ
+     */
+    function generateActionButtons(status, idKey) {
+      let buttonsHTML = '';
+
+      // ปุ่มยืนยัน
+      if (status === 'รอการยืนยัน') {
+        buttonsHTML += `<button class="bg-green-500 text-white px-2 py-1 rounded mr-1" onclick="confirmBooking('${idKey}')">ยืนยัน</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-green-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>ยืนยัน</button>`;
+      }
+
+      // ปุ่มเสร็จสิ้น
+      if (status === 'ยืนยันแล้ว') {
+        buttonsHTML += `<button class="bg-yellow-500 text-white px-2 py-1 rounded mr-1" onclick="completeBooking('${idKey}')">เสร็จสิ้น</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-yellow-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>เสร็จสิ้น</button>`;
+      }
+
+      // ปุ่มยกเลิก
+      if (status === 'รอการยืนยัน' || status === 'ยืนยันแล้ว') {
+        buttonsHTML += `<button class="bg-red-500 text-white px-2 py-1 rounded mr-1" onclick="cancelBooking('${idKey}')">ยกเลิก</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-red-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>ยกเลิก</button>`;
+      }
+
+      // ปุ่มส่งแจ้งเตือน
+      if (status === 'รอการยืนยัน') {
+        buttonsHTML += `<button class="bg-blue-500 text-white px-2 py-1 rounded" onclick="sendReminder('${idKey}')">แจ้งเตือน</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-blue-500 text-white px-2 py-1 rounded opacity-50 cursor-not-allowed" disabled>แจ้งเตือน</button>`;
+      }
+
+      return buttonsHTML;
+    }
+
+    function confirmBooking(idKey) {
+      Swal.fire({
+        title: 'ยืนยันการนัดหมาย?',
+        text: 'คุณต้องการยืนยันการนัดหมายนี้หรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถยืนยันการนัดหมายได้'
+              });
+              console.error('Error confirming booking:', error);
+            })
+            .confirmBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function cancelBooking(idKey) {
+      Swal.fire({
+        title: 'ยกเลิกการนัดหมาย?',
+        text: 'คุณต้องการยกเลิกการนัดหมายนี้หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยกเลิกการนัดหมาย',
+        cancelButtonText: 'กลับ'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถยกเลิกการนัดหมายได้'
+              });
+              console.error('Error cancelling booking:', error);
+            })
+            .cancelBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function completeBooking(idKey) {
+      Swal.fire({
+        title: 'เสร็จสิ้นการนัดหมาย?',
+        text: 'คุณต้องการทำเครื่องหมายการนัดหมายนี้ว่าเสร็จสิ้นหรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'เสร็จสิ้น',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถเสร็จสิ้นการนัดหมายได้'
+              });
+              console.error('Error completing booking:', error);
+            })
+            .completeBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function sendReminder(idKey) {
+      Swal.fire({
+        title: 'ส่งการแจ้งเตือน?',
+        text: 'คุณต้องการส่งการแจ้งเตือนนี้หรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'ส่ง',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'แจ้งเตือนถูกส่งแล้ว!',
+                text: response,
+                timer: 2000,
+                showConfirmButton: false
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถส่งการแจ้งเตือนได้'
+              });
+              console.error('Error sending reminder:', error);
+            })
+            .sendReminderFromClient(idKey);
+        }
+      });
+    }
+
+    function fetchMembers() {
+      google.script.run
+        .withSuccessHandler(function(members) {
+          membersData = members;
+          populateDataLists();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching members:', error);
+        })
+        .fetchMembers();
+    }
+
+    function populateDataLists() {
+      const namesList = document.getElementById('namesList');
+      const phonesList = document.getElementById('phonesList');
+
+      membersData.forEach(member => {
+        const optionName = document.createElement('option');
+        optionName.value = member.name;
+        namesList.appendChild(optionName);
+
+        const optionPhone = document.createElement('option');
+        optionPhone.value = member.phoneNumber;
+        phonesList.appendChild(optionPhone);
+      });
+    }
+
+    function handleMemberSelection() {
+      const nameInput = document.getElementById('name');
+      const phoneInput = document.getElementById('phonenumber');
+      const useridInput = document.getElementById('userid');
+
+      nameInput.addEventListener('input', function() {
+        const selectedName = nameInput.value;
+        const member = membersData.find(m => m.name === selectedName);
+        if (member) {
+          useridInput.value = member.userId;
+          phoneInput.value = member.phoneNumber;
+        }
+      });
+
+      phoneInput.addEventListener('input', function() {
+        const selectedPhone = phoneInput.value;
+        const member = membersData.find(m => m.phoneNumber === selectedPhone);
+        if (member) {
+          useridInput.value = member.userId;
+          nameInput.value = member.name;
+        }
+      });
+    }
+
+    function fetchBookings() {
+      google.script.run
+        .withSuccessHandler(function(bookings) {
+          bookingsData = bookings;
+
+          // เรียงลำดับการนัดหมายจากล่าสุดไปเก่าสุด
+          bookingsData.sort(function(a, b) {
+            const dateA = new Date(a.date + ' ' + a.time);
+            const dateB = new Date(b.date + ' ' + b.time);
+            return dateB - dateA; // ลำดับจากมากไปน้อย (ล่าสุดก่อน)
+          });
+
+          // กรองข้อมูลเพื่อซ่อนสถานะ 'ยกเลิก' และ 'เสร็จสิ้น' ในการโหลดครั้งแรก
+          filteredData = bookingsData.filter(booking => 
+            booking.status !== 'ยกเลิก' && booking.status !== 'เสร็จสิ้น'
+          );
+
+          currentPage = 1;
+          displayBookings();
+          setupPagination();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching bookings:', error);
+        })
+        .fetchBookings();
+    }
+
+    function displayBookings() {
+      const bookingsTable = document.getElementById('bookingsTable');
+      bookingsTable.innerHTML = '';
+
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const pageData = filteredData.slice(startIndex, endIndex);
+
+      pageData.forEach(booking => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">${booking.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.phonenumber}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.service}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.locationservice}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.date}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.time}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${booking.status}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            ${generateActionButtons(booking.status, booking.idKey)}
+          </td>
+        `;
+
+        bookingsTable.appendChild(row);
+      });
+    }
+
+    function setupPagination() {
+      const paginationDiv = document.getElementById('pagination');
+      paginationDiv.innerHTML = '';
+
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.textContent = i;
+        button.className = 'mx-1 px-2 py-1 rounded';
+        if (i === currentPage) {
+          button.classList.add('bg-blue-500', 'text-white');
+        } else {
+          button.classList.add('bg-gray-300');
+        }
+        button.addEventListener('click', function() {
+          currentPage = i;
+          displayBookings();
+          setupPagination();
+        });
+        paginationDiv.appendChild(button);
+      }
+    }
+
+    /**
+     * สร้างปุ่มการกระทำตามสถานะของการนัดหมาย
+     * @param {string} status - สถานะของการนัดหมาย
+     * @param {string} idKey - รหัสการนัดหมาย
+     * @returns {string} - HTML ของปุ่มการกระทำ
+     */
+    function generateActionButtons(status, idKey) {
+      let buttonsHTML = '';
+
+      // ปุ่มยืนยัน
+      if (status === 'รอการยืนยัน') {
+        buttonsHTML += `<button class="bg-green-500 text-white px-2 py-1 rounded mr-1" onclick="confirmBooking('${idKey}')">ยืนยัน</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-green-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>ยืนยัน</button>`;
+      }
+
+      // ปุ่มเสร็จสิ้น
+      if (status === 'ยืนยันแล้ว') {
+        buttonsHTML += `<button class="bg-yellow-500 text-white px-2 py-1 rounded mr-1" onclick="completeBooking('${idKey}')">เสร็จสิ้น</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-yellow-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>เสร็จสิ้น</button>`;
+      }
+
+      // ปุ่มยกเลิก
+      if (status === 'รอการยืนยัน' || status === 'ยืนยันแล้ว') {
+        buttonsHTML += `<button class="bg-red-500 text-white px-2 py-1 rounded mr-1" onclick="cancelBooking('${idKey}')">ยกเลิก</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-red-500 text-white px-2 py-1 rounded mr-1 opacity-50 cursor-not-allowed" disabled>ยกเลิก</button>`;
+      }
+
+      // ปุ่มส่งแจ้งเตือน
+      if (status === 'รอการยืนยัน') {
+        buttonsHTML += `<button class="bg-blue-500 text-white px-2 py-1 rounded" onclick="sendReminder('${idKey}')">แจ้งเตือน</button>`;
+      } else {
+        buttonsHTML += `<button class="bg-blue-500 text-white px-2 py-1 rounded opacity-50 cursor-not-allowed" disabled>แจ้งเตือน</button>`;
+      }
+
+      return buttonsHTML;
+    }
+
+    function confirmBooking(idKey) {
+      Swal.fire({
+        title: 'ยืนยันการนัดหมาย?',
+        text: 'คุณต้องการยืนยันการนัดหมายนี้หรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถยืนยันการนัดหมายได้'
+              });
+              console.error('Error confirming booking:', error);
+            })
+            .confirmBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function cancelBooking(idKey) {
+      Swal.fire({
+        title: 'ยกเลิกการนัดหมาย?',
+        text: 'คุณต้องการยกเลิกการนัดหมายนี้หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยกเลิกการนัดหมาย',
+        cancelButtonText: 'กลับ'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถยกเลิกการนัดหมายได้'
+              });
+              console.error('Error cancelling booking:', error);
+            })
+            .cancelBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function completeBooking(idKey) {
+      Swal.fire({
+        title: 'เสร็จสิ้นการนัดหมาย?',
+        text: 'คุณต้องการทำเครื่องหมายการนัดหมายนี้ว่าเสร็จสิ้นหรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'เสร็จสิ้น',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ!',
+                text: response
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถเสร็จสิ้นการนัดหมายได้'
+              });
+              console.error('Error completing booking:', error);
+            })
+            .completeBookingFromClient(idKey);
+        }
+      });
+    }
+
+    function sendReminder(idKey) {
+      Swal.fire({
+        title: 'ส่งการแจ้งเตือน?',
+        text: 'คุณต้องการส่งการแจ้งเตือนนี้หรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'ส่ง',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              Swal.fire({
+                icon: 'success',
+                title: 'แจ้งเตือนถูกส่งแล้ว!',
+                text: response,
+                timer: 2000,
+                showConfirmButton: false
+              });
+              fetchBookings();
+            })
+            .withFailureHandler(function(error) {
+              Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: error.message || 'ไม่สามารถส่งการแจ้งเตือนได้'
+              });
+              console.error('Error sending reminder:', error);
+            })
+            .sendReminderFromClient(idKey);
+        }
+      });
+    }
+
+    function fetchMembers() {
+      google.script.run
+        .withSuccessHandler(function(members) {
+          membersData = members;
+          populateDataLists();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error fetching members:', error);
+        })
+        .fetchMembers();
+    }
+
+    function populateDataLists() {
+      const namesList = document.getElementById('namesList');
+      const phonesList = document.getElementById('phonesList');
+
+      membersData.forEach(member => {
+        const optionName = document.createElement('option');
+        optionName.value = member.name;
+        namesList.appendChild(optionName);
+
+        const optionPhone = document.createElement('option');
+        optionPhone.value = member.phoneNumber;
+        phonesList.appendChild(optionPhone);
+      });
+    }
+
+    function handleMemberSelection() {
+      const nameInput = document.getElementById('name');
+      const phoneInput = document.getElementById('phonenumber');
+      const useridInput = document.getElementById('userid');
+
+      nameInput.addEventListener('input', function() {
+        const selectedName = nameInput.value;
+        const member = membersData.find(m => m.name === selectedName);
+        if (member) {
+          useridInput.value = member.userId;
+          phoneInput.value = member.phoneNumber;
+        }
+      });
+
+      phoneInput.addEventListener('input', function() {
+        const selectedPhone = phoneInput.value;
+        const member = membersData.find(m => m.phoneNumber === selectedPhone);
+        if (member) {
+          useridInput.value = member.userId;
+          nameInput.value = member.name;
+        }
+      });
+    }
+
+  </script>
+
+</body>
+</html>
