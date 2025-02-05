@@ -542,11 +542,11 @@
                 bookButton.addEventListener('click', () => {
                     timeInput.value = time.padStart(5, '0');
                     showPopup('ยืนยันการนัดหมาย', `
-                            <p>ประเภทบุคคล: ${form.service.value}</p>
-                            <p>ชนิดรถ: ${form.locationservice.value}</p>
+                            <p>เรื่อง: ${form.service.value}</p>
+                            
                             <p>ชื่อ-สกุล: ${form.name.value}</p>
                             <p>เบอร์ติดต่อ: ${form.phonenumber.value}</p>
-                            <p>หมายเหตุ: ${form.note.value}</p>
+                            <p>รายละเอียด: ${form.note.value}</p>
                             <p>ยอมรับการบันทึกข้อมูล: ${form.saveInfo.checked ? 'ใช่' : 'ไม่ใช่'}</p>
                             <p>วันที่: ${selectedDate}</p>
                             <p>เวลา: ${timeInput.value}</p>
@@ -593,11 +593,11 @@
                 return;
             }
             showPopup('<p class="text-blue-900">📆 ยืนยันการนัดหมาย</p>', `
-                    <p>ประเภทบุคคล: ${form.service.value}</p>
-                    <p>ชนิดรถ: ${form.locationservice.value}</p>
+                    <p>เรื่อง: ${form.service.value}</p>
+                    
                     <p>ชื่อ-สกุล: ${form.name.value}</p>
                     <p>เบอร์ติดต่อ: ${form.phonenumber.value}</p>
-                    <p>หมายเหตุ: ${form.note.value}</p>
+                    <p>รายละเอียด: ${form.note.value}</p>
                     <p>ยอมรับการบันทึกข้อมูล: ${form.saveInfo.checked ? 'ใช่' : 'ไม่ใช่'}</p>
                     <p>วันที่: ${selectedDate}</p>
                     <p>เวลา: ${timeInput.value}</p>
