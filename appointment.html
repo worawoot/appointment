@@ -527,7 +527,7 @@
                 slotDiv.className = 'flex justify-between items-center py-2';
 
                 const timeSpan = document.createElement('span');
-                timeSpan.className = 'px-12 py-2 rounded-xl bg-white text-slate-800';
+                timeSpan.className = 'px-10 py-2 rounded-xl bg-white text-slate-800';
                 timeSpan.textContent = `${time} น.`;
                 
                
@@ -538,7 +538,7 @@
                
 
                 const bookButton = document.createElement('button');
-                bookButton.className = `custom-button px-12 py-2 rounded-xl ${info.status === 'Available' ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-400'}`;
+                bookButton.className = `custom-button px-10 py-2 rounded-xl ${info.status === 'Available' ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-400'}`;
                 bookButton.innerHTML = `<i class="fas fa-calendar-alt"></i> นัดหมาย`;
                 bookButton.disabled = info.status !== 'Available';
                 bookButton.addEventListener('click', () => {
