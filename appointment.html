@@ -384,10 +384,7 @@
                 return;
             }
 
-            if (!locationservice) {
-                showPopup('ข้อผิดพลาด', 'กรุณาเลือกชนิด ก่อนดำเนินการต่อ', 'error');
-                return;
-            }
+           
 
             if (currentStep < 2) {
                 document.getElementById(`step${currentStep}`).style.display = 'none';
