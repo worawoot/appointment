@@ -538,7 +538,7 @@
                
 
                 const bookButton = document.createElement('button');
-                bookButton.className = `custom-button px-10 py-2 rounded-xl ${info.status === 'Available' ? 'bg-green-400 text-white' : 'bg-red-400 text-gray-400'}`;
+                bookButton.className = `custom-button px-10 py-2 rounded-xl ${info.status === 'Available' ? 'bg-green-400 text-white' : 'bg-red-400 text-white'}`;
                 bookButton.innerHTML = `<i class="fas fa-calendar-alt"></i> นัดหมาย`;
                 bookButton.disabled = info.status !== 'Available';
                 bookButton.addEventListener('click', () => {
