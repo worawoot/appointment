@@ -527,18 +527,18 @@
                 slotDiv.className = 'flex justify-between items-center py-2';
 
                 const timeSpan = document.createElement('span');
-                timeSpan.className = 'px-6 py-2 rounded-xl bg-white text-slate-800';
+                timeSpan.className = 'px-10 py-2 rounded-xl bg-white text-slate-800';
                 timeSpan.textContent = `${time} น.`;
                 
                
                 const statusButton = document.createElement('button');
-                statusButton.className = `hidden px-8 py-2 rounded-xl ${info.status === 'Available' ? 'bg-green-200 text-green-600 cursor-not-allowed' : 'bg-red-200 text-red-600 cursor-not-allowed'}`;
+                statusButton.className = `hidden px-6 py-2 rounded-xl ${info.status === 'Available' ? 'bg-green-200 text-green-600 cursor-not-allowed' : 'bg-red-200 text-red-600 cursor-not-allowed'}`;
                 statusButton.textContent = info.status === 'Available' ? `ว่าง (${info.remaining}/${info.total})` : `เต็ม (${info.remaining}/${info.total})`;
                 statusButton.disabled = true;
                
 
                 const bookButton = document.createElement('button');
-                bookButton.className = `custom-button px-6 py-2 rounded-xl ${info.status === 'Available' ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-400'}`;
+                bookButton.className = `custom-button px-10 py-2 rounded-xl ${info.status === 'Available' ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-400'}`;
                 bookButton.innerHTML = `<i class="fas fa-calendar-alt"></i> นัดหมาย`;
                 bookButton.disabled = info.status !== 'Available';
                 bookButton.addEventListener('click', () => {
