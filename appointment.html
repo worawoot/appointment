@@ -473,7 +473,7 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const dayElement = document.createElement('div');
-                dayElement.classList.add('bg-slate-800', 'px-6', 'py-3', 'mx-2', 'bg-white', 'border', 'border-slate-800', 'text-center', 'rounded-xl', 'cursor-pointer');
+                dayElement.classList.add('bg-slate-800', 'px-3', 'py-3', 'mx-2', 'bg-white', 'border', 'border-slate-800', 'text-center', 'rounded-xl', 'cursor-pointer');
                 dayElement.textContent = `${daysOfWeek[date.getDay()]} ${day}`;
                 if (day === currentDay) {
                     dayElement.id = 'currentDay';
