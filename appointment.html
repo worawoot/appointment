@@ -400,7 +400,7 @@
                     throw new Error('Network response was not ok');
                 }
                 const data = await response.json();
-                populateDropdown('service', data.services, 'เรื่องที่นัดหมาย');
+                populateDropdown('service', data.services, 'กรุณาเลือกบริการ');
                 populateDropdown('locationservice', data.locationservice, 'เลือกชนิด');
             } catch (error) {
                 console.error('There was a problem with the fetch operation:', error);
