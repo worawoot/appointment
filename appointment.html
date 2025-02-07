@@ -140,7 +140,7 @@
 
             <!-- ฟอร์มการจอง (Step 1) -->
             <div id="step1" class="max-w-sm mx-auto">
-                <!-- เรื่องที่นัดหมาย -->
+                <!-- กรุณาเลือกบริการ -->
                 <div class="flex space-x-4 mb-4">
                     <span class="bg-white flex items-center border rounded-xl p-2 w-32">
                         <img src="https://img.icons8.com/?size=100&id=AuXdAflRsGHJ&format=png&color=000000" class="w-6 h-6 mr-4">
@@ -148,8 +148,8 @@
                     </span>
                     <select id="service" name="service"
                         class="rounded-xl px-2 text-center bg-white border text-gray-900 block flex-1 min-w-0 w-full"
-                        placeholder="เลือกเรื่องที่นัดหมาย">
-                        <option value="" disabled selected>เรื่องที่นัดหมาย</option>
+                        placeholder="กรุณาเลือกบริการ">
+                        <option value="" disabled selected>กรุณาเลือกบริการ</option>
                     </select>
                 </div>
              
@@ -364,7 +364,7 @@
 
             // ตรวจสอบการเลือกบริการและสาขา
             if (!service) {
-                showPopup('ข้อผิดพลาด', 'กรุณาเลือกเรื่อง ก่อนดำเนินการต่อ', 'error');
+                showPopup('ข้อผิดพลาด', 'กรุณาเลือกบริการ ก่อนดำเนินการต่อ', 'error');
                 return;
             }
 
@@ -528,7 +528,7 @@
                 bookButton.addEventListener('click', () => {
                     timeInput.value = time.padStart(5, '0');
                     showPopup('ยืนยันการนัดหมาย', `
-                            <p>เรื่อง: ${form.service.value}</p>
+                            <p>บริการ: ${form.service.value}</p>
                             
                             <p>ชื่อ-สกุล: ${form.name.value}</p>
                             <p>เบอร์ติดต่อ: ${form.phonenumber.value}</p>
