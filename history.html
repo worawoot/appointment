@@ -192,19 +192,19 @@
 
         card.innerHTML = `
           <div class="flex justify-between p-2">
-            <p class="text-sm text-gray-700"><strong>เรื่อง:</strong> ${detail.service}</p>
+            <p class="text-sm text-gray-700"><strong>บริการ :</strong> ${detail.service}</p>
             
           </div>
           <div class="flex justify-between p-2">
-            <p class="text-sm text-gray-700"><strong>วันที่:</strong> ${detail.date}</p>
-            <p class="text-sm text-gray-700"><strong>เวลา:</strong> ${detail.time}</p>
+            <p class="text-sm text-gray-700"><strong>วันที่ :</strong> ${detail.date}</p>
+            <p class="text-sm text-gray-700"><strong>เวลา :</strong> ${detail.time}</p>
           </div>
           <div class="p-2 text-sm text-gray-700">
-            <p><strong>ชื่อ:</strong> ${detail.name}</p>
-            <p><strong>เบอร์โทร:</strong> ${detail.phonenumber}</p>
-            <p><strong>รายละเอียด:</strong> ${detail.note}</p>
+            <p><strong>ชื่อ :</strong> ${detail.name}</p>
+            <p><strong>เบอร์โทร :</strong> ${detail.phonenumber}</p>
+            <p><strong>รายละเอียด :</strong> ${detail.note}</p>
           </div>
-          <p class="p-2 text-sm text-gray-700"><strong>สถานะ:</strong> ${detail.status}</p>
+          <p class="p-2 text-sm text-gray-700"><strong>สถานะ :</strong> ${detail.status}</p>
           <div class="mt-4 flex flex-row justify-between">
             <button class="confirm-btn bg-green-500 text-white px-4 py-1 rounded-2xl ${disableConfirm ? 'opacity-50 cursor-not-allowed' : ''}" ${disableConfirm ? 'disabled' : ''} data-id="${detail.idKey}">ยืนยันนัดหมาย</button>
             <button class="cancel-btn bg-red-500 text-white px-4 py-1 rounded-2xl ${disableCancel ? 'opacity-50 cursor-not-allowed' : ''}" ${disableCancel ? 'disabled' : ''} data-id="${detail.idKey}">ยกเลิก</button>
