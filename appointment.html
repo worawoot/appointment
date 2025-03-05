@@ -39,24 +39,28 @@
         }
 
         .loading-spinner {
-            border: 10px solid #ffffff;
-            /* background-color: #ebebeb; */
-            background-image: url("https://www.google.co.th/url?sa=i&url=https%3A%2F%2Fgdcatalog.go.th%2Fdataset%2Fgdpublish-cus-consumption&psig=AOvVaw2GzrnbQWuQ_02HY-Hpk1mV&ust=1738973912708000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOie3O2ksIsDFQAAAAAdAAAAABAJ");
-            border-radius: 50%;
-            border-top: 10px solid #1e293b;
-            width: 100px;
-            height: 100px;
-            animation: spin 2s linear infinite;
+            position: relative;
+            width: 85px;
+            height: 50px;
+            background-repeat: no-repeat;
+    background-image: linear-gradient(#FFF 50px, transparent 0),
+                      linear-gradient(#FFF 50px, transparent 0),
+                      linear-gradient(#FFF 50px, transparent 0),
+                      linear-gradient(#FFF 50px, transparent 0),
+                      linear-gradient(#FFF 50px, transparent 0),
+                      linear-gradient(#FFF 50px, transparent 0);
+    background-position: 0px center, 15px center, 30px center, 45px center, 60px center, 75px center, 90px center;
+    animation: rikSpikeRoll 0.65s linear infinite alternate;
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+        @keyframes rikSpikeRoll {
+          0% { background-size: 10px 3px;}
+          16% { background-size: 10px 50px, 10px 3px, 10px 3px, 10px 3px, 10px 3px, 10px 3px}
+          33% { background-size: 10px 30px, 10px 50px, 10px 3px, 10px 3px, 10px 3px, 10px 3px}
+          50% { background-size: 10px 10px, 10px 30px, 10px 50px, 10px 3px, 10px 3px, 10px 3px}
+          66% { background-size: 10px 3px, 10px 10px, 10px 30px, 10px 50px, 10px 3px, 10px 3px}
+          83% { background-size: 10px 3px, 10px 3px,  10px 10px, 10px 30px, 10px 50px, 10px 3px}
+          100% { background-size: 10px 3px, 10px 3px, 10px 3px,  10px 10px, 10px 30px, 10px 50px}
         }
 
         .popup {
